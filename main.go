@@ -5,7 +5,10 @@ import (
 	"io/ioutil"
 	"fmt"
 	"os"
-	"image/png"
+	"image"
+//import file formats for the image package to decode
+	_ "image/png"
+	_ "image/gif"
 	"image/jpeg"
 )
 
@@ -22,7 +25,7 @@ func viewFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img, err := png.Decode(file)
+	img, _, err := image.Decode(file)
 	if err != nil {
 		fmt.Fprint(w, "Error @ 2")
 		fmt.Fprint(w, err)
