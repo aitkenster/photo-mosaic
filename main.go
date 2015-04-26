@@ -32,13 +32,12 @@ func viewFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := os.Create("./tmp/uploadedfile.jpeg")
+	out, err := os.Create("./public/tmp/uploadedfile.jpg")
 	if err != nil {
 		fmt.Fprint(w, "Error @ 3")
 		fmt.Fprint(w, err)
 
 	}
-	defer out.Close()
 
 	err = jpeg.Encode(out, img, nil)
 	if err != nil {
@@ -47,9 +46,9 @@ func viewFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	out.Close()
 
-
-	fmt.Fprint(w, "Image uploaded successfully")
+	http.ServeFile(w, r, "./public/tmp/uploadedfile.jpg")
 }
 
 func main () {
