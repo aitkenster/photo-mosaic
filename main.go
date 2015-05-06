@@ -46,9 +46,10 @@ func viewFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out.Close()
+	defer out.Close()
 
 	http.ServeFile(w, r, "./public/tmp/uploadedfile.jpg")
+
 }
 
 func main () {
