@@ -25,9 +25,11 @@ func main (){
 	}
 
 	b := img.Bounds()
-	rgba := image.NewRGBA(b)
-	draw.Draw(rgba, b, img, b.Min, draw.Src)
+	fmt.Println(b.Max.X)
 
+	fmt.Println(b.Max.Y)
+	crop_rect := image.NewRGBA(image.Rect(0, 0, 300, 150))
+	draw.Draw(crop_rect, crop_rect.Bounds(), img, image.Point{0,0}, draw.Src)
 	out, err := os.Create("altered_test_image.jpeg")
 	if err != nil {
 		fmt.Print("Error @ img3")
@@ -37,7 +39,7 @@ func main (){
 
 	defer out.Close()
 
-	err = jpeg.Encode(out, img, nil)
+	err = jpeg.Encode(out, crop_rect, nil)
 	if err != nil {
 		fmt.Print("Error @ img4")
 		fmt.Println(err)
@@ -46,5 +48,4 @@ func main (){
 
 
 }
-
 
