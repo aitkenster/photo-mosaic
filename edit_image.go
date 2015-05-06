@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 	"image/jpeg"
+	"image/color"
 	"image/draw"
 	"os"
 	"fmt"
@@ -54,8 +55,6 @@ func addMiniImages(main_image *image.RGBA, mini_image *image.RGBA) {
 	size := main_image.Bounds().Size()
 	for x := 0; x < size.X; x += 20 {
 		for y := 0; y < size.Y; y += 10 {
-			fmt.Println(x)
-			fmt.Println(y)
 			start_point = image.Pt(x, y)
 			min_point := image.Pt(0,0)
 			r := image.Rectangle{start_point, start_point.Add(mini_image.Bounds().Size())}
@@ -81,5 +80,32 @@ func getMiniImage(filename string) (*image.RGBA) {
 //crop the mini image(this needs to be resize or something really)
 	cropped_mini := image.NewRGBA(image.Rect(0, 0, 10, 10))
 	draw.Draw(cropped_mini, cropped_mini.Bounds(), mini_image, image.Point{0,0}, draw.Src)
+	analyseColors(cropped_mini)
 	return cropped_mini
+}
+
+func analyseColors(image *image.RGBA) {
+	size := image.Bounds().Size()
+	r := 0
+	g := 0
+	b := 0
+	number_pixels := 0
+	for x := 0; x < size.X; x ++ {
+		for y := 0; y < size.Y; y++ {
+			color := image.RGBAAt(x,y)
+			fmt.Println(color.R)
+			r += int(color.R)
+			g += int(color.G)
+			b += int(color.B)
+			number_pixels ++
+		}
+	}
+	averageColor := color.RGBA{
+		R: uint8(r/number_pixels),
+		G: uint8(g/number_pixels),
+		B: uint8(b/number_pixels),
+		A: uint8(1),
+	}
+	return averageColor
+
 }
