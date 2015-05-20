@@ -81,39 +81,30 @@ func getImageAverageColors(main_image *image.RGBA) {
 
 func processMosaicTiles()(map[string]color.RGBA) {
 	image_colors := make(map[string]color.RGBA)
-	//walkFn := func(path string, info os.FileInfo, err error) error {
-		//if info == nil {
-			//fmt.Println("hey")
-			//return nil
-		//}
-		//fmt.Println("This is some image info:")
-		//fmt.Println(info)
-		//img_file, err := os.Open(info.Name())
-		//if err != nil {
-			//fmt.Println(err)
-			//return err
-		//}
-		//defer img_file.Close()
 
-		//img, _, err  := image.Decode(img_file)
-		//if err != nil {
-			//fmt.Println(err)
-			//return err
-		//}
-		//average_color := averageColor(img)
-		//image_colors[info.Name()] = average_color
-		//return nil
-	//}
-	visit := func(path string, f os.FileInfo, err error) error {
+	overallColorAvg := func(path string, f os.FileInfo, err error) error {
 		if !f.IsDir() {
-			fmt.Println(path)
+			tile_image, err := os.Open("./" + path)
+			if err != nil {
+				fmt.Print("Error @ mos img1")
+				fmt.Println(err)
+				return nil
+			}
+			defer tile_image.Close()
+
+			img, _, err  := image.Decode(tile_image)
+			if err != nil {
+				fmt.Print("Error @ mos img2")
+				fmt.Println(err)
+				return nil
+			}
+			image_colors[path] = averageColor(img)
 		}
 		return nil
 	}
 
 	path := "./public/mosaic_tiles"
-	fullPath, err := filepath.Abs(path)
-	err = filepath.Walk(fullPath, visit)
+	err := filepath.Walk(path, overallColorAvg)
 
 
 	if err != nil {
