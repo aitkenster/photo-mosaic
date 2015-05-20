@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"image/draw"
 	"os"
+	"path/filepath"
 	"fmt"
 )
 
@@ -46,7 +47,7 @@ func main (){
 		fmt.Println(err)
 		return
 	}
-
+processMosaicTiles()
 
 }
 
@@ -70,15 +71,59 @@ func getImageAverageColors(main_image *image.RGBA) {
 		for y := 0; y < size.Y; y += 10 {
 			start_point := image.Pt(x, y)
 			end_point := image.Pt(x+10, y+10)
-			fmt.Println(start_point)
 			r := image.Rectangle{start_point, end_point}
 			m := main_image.SubImage(r)
 			average_color := averageColor(m)
-			fmt.Println(average_color)
 			draw.Draw(main_image, r, &image.Uniform{average_color}, image.ZP, draw.Src)
 		}
 	}
 }
+
+func processMosaicTiles()(map[string]color.RGBA) {
+	image_colors := make(map[string]color.RGBA)
+	//walkFn := func(path string, info os.FileInfo, err error) error {
+		//if info == nil {
+			//fmt.Println("hey")
+			//return nil
+		//}
+		//fmt.Println("This is some image info:")
+		//fmt.Println(info)
+		//img_file, err := os.Open(info.Name())
+		//if err != nil {
+			//fmt.Println(err)
+			//return err
+		//}
+		//defer img_file.Close()
+
+		//img, _, err  := image.Decode(img_file)
+		//if err != nil {
+			//fmt.Println(err)
+			//return err
+		//}
+		//average_color := averageColor(img)
+		//image_colors[info.Name()] = average_color
+		//return nil
+	//}
+	visit := func(path string, f os.FileInfo, err error) error {
+		if !f.IsDir() {
+			fmt.Println(path)
+		}
+		return nil
+	}
+
+	path := "./public/mosaic_tiles"
+	fullPath, err := filepath.Abs(path)
+	err = filepath.Walk(fullPath, visit)
+
+
+	if err != nil {
+		fmt.Println("yo")
+		fmt.Println(err)
+	}
+	fmt.Println(image_colors)
+	return image_colors
+}
+
 
 //func getMiniImage(filename string) (*image.RGBA) {
 	//mini_file, err := os.Open(filename)
@@ -127,7 +172,26 @@ func averageColor(img image.Image) (color.RGBA) {
 		B: uint8(b/number_pixels),
 		A: 1,
 	}
-	fmt.Println(averageColor)
 	return averageColor
 
 }
+
+func cropToSquare(img *image.RGBA) (*image.RGBA) {
+	var cropped_img *image.RGBA
+	var side_length int
+	if img.Bounds().Max.X > img.Bounds().Max.Y {
+		side_length = img.Bounds().Max.Y
+	} else {
+		side_length = img.Bounds().Max.X
+	}
+
+	cropped_img = image.NewRGBA(image.Rect(0, 0, side_length, side_length))
+	draw.Draw(cropped_img, cropped_img.Bounds(), img, image.Point{0,0}, draw.Src)
+
+	return cropped_img
+}
+
+//func getMatchingImage(average_color color.RGBA, image_color_averages map[string]color.RGBA) (*image.RGBA) {
+
+	//return matching_image
+//}
