@@ -29,7 +29,7 @@ func main (){
 //crop the main image
 	crop_rect := image.NewRGBA(image.Rect(0, 0, 300, 150))
 	draw.Draw(crop_rect, crop_rect.Bounds(), img, image.Point{0,0}, draw.Src)
-	getImageAverageColors(crop_rect)
+	image_averages := getImageAverageColors(crop_rect)
 	//mini_image := getMiniImage("test_image2.jpeg")
 	//addMiniImages(crop_rect, mini_image)
 	out, err := os.Create("altered_test_image.jpeg")
@@ -47,7 +47,9 @@ func main (){
 		fmt.Println(err)
 		return
 	}
-processMosaicTiles()
+	sample_color := image_averages[70]
+	image_color_dictionary := processMosaicTiles()
+	fmt.Println(findClosestColorMatch(sample_color, image_color_dictionary))
 
 }
 
@@ -65,7 +67,8 @@ processMosaicTiles()
 //}
 
 //takes each 10x10 pixel block and returns the average color
-func getImageAverageColors(main_image *image.RGBA) {
+func getImageAverageColors(main_image *image.RGBA) []color.RGBA{
+	var average_colors []color.RGBA
 	size := main_image.Bounds().Size()
 	for x := 0; x < size.X; x += 10 {
 		for y := 0; y < size.Y; y += 10 {
@@ -74,13 +77,15 @@ func getImageAverageColors(main_image *image.RGBA) {
 			r := image.Rectangle{start_point, end_point}
 			m := main_image.SubImage(r)
 			average_color := averageColor(m)
+			average_colors = append(average_colors, average_color)
 			draw.Draw(main_image, r, &image.Uniform{average_color}, image.ZP, draw.Src)
 		}
 	}
+	return average_colors
 }
 
-func processMosaicTiles()(map[string]color.RGBA) {
-	image_colors := make(map[string]color.RGBA)
+func processMosaicTiles()(map[color.RGBA] string) {
+	image_color_dictionary := make(map[color.RGBA]string)
 
 	overallColorAvg := func(path string, f os.FileInfo, err error) error {
 		if !f.IsDir() {
@@ -98,7 +103,7 @@ func processMosaicTiles()(map[string]color.RGBA) {
 				fmt.Println(err)
 				return nil
 			}
-			image_colors[path] = averageColor(img)
+			image_color_dictionary[averageColor(img)] = "./" + path
 		}
 		return nil
 	}
@@ -111,10 +116,19 @@ func processMosaicTiles()(map[string]color.RGBA) {
 		fmt.Println("yo")
 		fmt.Println(err)
 	}
-	fmt.Println(image_colors)
-	return image_colors
+	fmt.Println(image_color_dictionary)
+	return image_color_dictionary
 }
 
+func findClosestColorMatch(average_color color.RGBA, image_color_dictionary map[color.RGBA]string) string {
+	var tile_palette color.Palette
+	for color, _ := range image_color_dictionary {
+		tile_palette = append(tile_palette, color)
+	}
+	closet_color_match := tile_palette.Convert(average_color)
+
+	return image_color_dictionary[color.RGBAModel.Convert(closet_color_match).(color.RGBA)]
+}
 
 //func getMiniImage(filename string) (*image.RGBA) {
 	//mini_file, err := os.Open(filename)
