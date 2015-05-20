@@ -47,9 +47,12 @@ func main (){
 		fmt.Println(err)
 		return
 	}
-	sample_color := image_averages[70]
 	image_color_dictionary := processMosaicTiles()
-	fmt.Println(findClosestColorMatch(sample_color, image_color_dictionary))
+	tile_positions := make(map[image.Point]string)
+	for point, color := range image_averages {
+		tile_positions[point] = findClosestColorMatch(color, image_color_dictionary)
+	}
+	fmt.Println(tile_positions)
 
 }
 
@@ -67,8 +70,8 @@ func main (){
 //}
 
 //takes each 10x10 pixel block and returns the average color
-func getImageAverageColors(main_image *image.RGBA) []color.RGBA{
-	var average_colors []color.RGBA
+func getImageAverageColors(main_image *image.RGBA) map[image.Point]color.RGBA{
+	average_colors := make(map[image.Point]color.RGBA)
 	size := main_image.Bounds().Size()
 	for x := 0; x < size.X; x += 10 {
 		for y := 0; y < size.Y; y += 10 {
@@ -77,7 +80,7 @@ func getImageAverageColors(main_image *image.RGBA) []color.RGBA{
 			r := image.Rectangle{start_point, end_point}
 			m := main_image.SubImage(r)
 			average_color := averageColor(m)
-			average_colors = append(average_colors, average_color)
+			average_colors[image.Pt(x, y)] = average_color
 			draw.Draw(main_image, r, &image.Uniform{average_color}, image.ZP, draw.Src)
 		}
 	}
