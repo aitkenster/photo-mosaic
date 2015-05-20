@@ -28,11 +28,9 @@ func main (){
 	}
 
 //crop the main image
-	crop_rect := image.NewRGBA(image.Rect(0, 0, 300, 150))
-	draw.Draw(crop_rect, crop_rect.Bounds(), img, image.Point{0,0}, draw.Src)
-	image_averages := getImageAverageColors(crop_rect)
-	//mini_image := getMiniImage("test_image2.jpeg")
-	//addMiniImages(crop_rect, mini_image)
+
+	resized_main_img := imaging.Resize(img, 300, 0, imaging.Lanczos)
+	image_averages := getImageAverageColors(resized_main_img)
 	mosaic, err := os.Create("altered_test_image.jpeg")
 	if err != nil {
 		fmt.Print("Error @ img3")
@@ -47,9 +45,11 @@ func main (){
 	for point, color := range image_averages {
 		tile_positions[point] = findClosestColorMatch(color, image_color_dictionary)
 	}
-	createTileCanvas(tile_positions, crop_rect)
+	canvas := image.NewRGBA(image.Rect(0,0, img.Bounds().Max.X*5, img.Bounds().Max.Y*5))
 
-	err = jpeg.Encode(mosaic, crop_rect, nil)
+	createTileCanvas(tile_positions, canvas)
+
+	err = jpeg.Encode(mosaic, canvas, nil)
 	if err != nil {
 		fmt.Print("Error @ img4")
 		fmt.Println(err)
@@ -59,18 +59,17 @@ func main (){
 
 
 //takes each 10x10 pixel block and returns the average color
-func getImageAverageColors(main_image *image.RGBA) map[image.Point]color.RGBA{
+func getImageAverageColors(main_image *image.NRGBA) map[image.Point]color.RGBA{
 	average_colors := make(map[image.Point]color.RGBA)
 	size := main_image.Bounds().Size()
-	for x := 0; x < size.X; x += 10 {
-		for y := 0; y < size.Y; y += 10 {
+	for x := 0; x < size.X; x += 5 {
+		for y := 0; y < size.Y; y += 5 {
 			start_point := image.Pt(x, y)
-			end_point := image.Pt(x+10, y+10)
+			end_point := image.Pt(x+5, y+5)
 			r := image.Rectangle{start_point, end_point}
 			m := main_image.SubImage(r)
 			average_color := averageColor(m)
-			average_colors[image.Pt(x, y)] = average_color
-			draw.Draw(main_image, r, &image.Uniform{average_color}, image.ZP, draw.Src)
+			average_colors[image.Pt(x*5, y*5)] = average_color
 		}
 	}
 	return average_colors
@@ -162,7 +161,7 @@ func createTileCanvas(tile_positions map[image.Point]string, mosaic *image.RGBA)
 			fmt.Println(err)
 		}
 
-		resized_tile := imaging.Resize(tile_image, 10, 10, imaging.Lanczos)
+		resized_tile := imaging.Resize(tile_image, 25, 25, imaging.Lanczos)
 		r := image.Rectangle{point, point.Add(resized_tile.Bounds().Size())}
 		draw.Draw(mosaic, r, resized_tile, image.Pt(0,0), draw.Src)
 	}
