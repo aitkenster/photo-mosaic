@@ -4,22 +4,22 @@ import (
 	"image"
 	"image/jpeg"
 	"image/color"
+	"net/http"
 	"image/draw"
 	"github.com/disintegration/imaging"
 	"os"
-	"path/filepath"
 	"fmt"
+	"github.com/aitkenster/photo-mosaic/image_source"
 )
 
 func main (){
-	test_image, err := os.Open("test_image.jpeg")
+	test_image, err := os.Open("test_image3.jpeg")
 	if err != nil {
 		fmt.Print("Error @ img1")
 		fmt.Println(err)
 		return
 	}
 	defer test_image.Close()
-
 	img, _, err  := image.Decode(test_image)
 	if err != nil {
 		fmt.Print("Error @ img2")
@@ -40,7 +40,8 @@ func main (){
 
 	defer mosaic.Close()
 
-	image_color_dictionary := processMosaicTiles()
+	photoLinks := image_source.GetFlickrRecentPhotos()
+	image_color_dictionary := processMosaicTiles(photoLinks)
 	tile_positions := make(map[image.Point]string)
 	for point, color := range image_averages {
 		tile_positions[point] = findClosestColorMatch(color, image_color_dictionary)
@@ -75,37 +76,28 @@ func getImageAverageColors(main_image *image.NRGBA) map[image.Point]color.RGBA{
 	return average_colors
 }
 
-func processMosaicTiles()(map[color.RGBA] string) {
+func processMosaicTiles(photoLinks[]string) map[color.RGBA] string {
 	image_color_dictionary := make(map[color.RGBA]string)
 
-	overallColorAvg := func(path string, f os.FileInfo, err error) error {
-		if !f.IsDir() {
-			tile_image, err := os.Open("./" + path)
-			if err != nil {
-				fmt.Print("Error @ mos img1")
-				fmt.Println(err)
-				return nil
-			}
-			defer tile_image.Close()
-
-			img, _, err  := image.Decode(tile_image)
-			if err != nil {
-				fmt.Print("Error @ mos img2")
-				fmt.Println(err)
-				return nil
-			}
-			image_color_dictionary[averageColor(img)] = "./" + path
+	for _, link := range photoLinks {
+		resp, err := http.Get(link)
+		if err != nil {
+			fmt.Println(err)
+			return nil
 		}
+		defer resp.Body.Close()
+
+		img, _, err  := image.Decode(resp.Body)
+		if err != nil {
+			fmt.Print("Error @ mos img2")
+			fmt.Println(err)
+			return nil
+		}
+
+		image_color_dictionary[averageColor(img)] = link
 		return nil
 	}
-
-	path := "./public/mosaic_tiles"
-	err := filepath.Walk(path, overallColorAvg)
-
-
-	if err != nil {
-		fmt.Println(err)
-	}
+fmt.Println(image_color_dictionary)
 	return image_color_dictionary
 }
 
