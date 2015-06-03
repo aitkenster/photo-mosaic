@@ -11,25 +11,22 @@ import (
 	"fmt"
 	"github.com/aitkenster/photo-mosaic/image_source"
 	"path"
+	"flag"
 )
 
 func main () {
-	test_image, err := os.Open("test_image3.jpeg")
-	if err != nil {
-		fmt.Print("Error @ img1")
-		fmt.Println(err)
-		return
-	}
+	userURL := flag.String("url", "http://www.clickerzoneuk.co.uk/cz/wp-content/uploads/2010/10/PuppySmall.jpg", "")
+	flag.Parse()
+	//test_image, err := os.Open("test_image3.jpeg")
+	//if err != nil {
+		//fmt.Print("Error @ img1")
+		//fmt.Println(err)
+		//return
+	//}
 
-	defer test_image.Close()
+	//defer test_image.Close()
 
-	img, _, err  := image.Decode(test_image)
-	if err != nil {
-		fmt.Print("Error @ img2")
-		fmt.Println(err)
-		return
-	}
-
+	img := getMainImageFromURL(*userURL)
 	//extract information from the main image
 	resized_main_img := imaging.Resize(img, 300, 0, imaging.Lanczos)
 	image_averages := getImageAverageColors(resized_main_img)
@@ -61,6 +58,23 @@ func main () {
 
 	//cleanup
 	cleanTiles()
+}
+
+func getMainImageFromURL(url string) image.Image {
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	defer resp.Body.Close()
+
+	img, _, err := image.Decode(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return img
 }
 
 func matchTilesToPositions(
