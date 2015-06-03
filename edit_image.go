@@ -14,7 +14,7 @@ import (
 )
 
 func main (){
-	test_image, err := os.Open("test_image3.jpeg")
+	test_image, err := os.Open("test_image2.jpeg")
 	if err != nil {
 		fmt.Print("Error @ img1")
 		fmt.Println(err)
@@ -57,6 +57,7 @@ func main (){
 		fmt.Println(err)
 		return
 	}
+	cleanTiles()
 }
 
 
@@ -78,11 +79,11 @@ func getImageAverageColors(main_image *image.NRGBA) map[image.Point]color.RGBA{
 }
 
 func processMosaicTiles(photoLinks[]string) map[color.RGBA] string {
+	makeTileDir()
 	image_color_dictionary := make(map[color.RGBA]string)
-	link := photoLinks[0]
-	//for _, link := range photoLinks {
+	for _, link := range photoLinks {
+		fmt.Println("Getting image " + link + " from Flickr")
 		resp, err := http.Get(link)
-		fmt.Println(resp)
 		if err != nil {
 			fmt.Println(err)
 			return nil
@@ -98,8 +99,7 @@ func processMosaicTiles(photoLinks[]string) map[color.RGBA] string {
 		filename := path.Base(link)
 		saveTile(img, filename)
 		image_color_dictionary[averageColor(img)] = filename
-		//return nil
-	//}
+	}
 fmt.Println(image_color_dictionary)
 	return image_color_dictionary
 }
@@ -145,13 +145,13 @@ func averageColor(img image.Image) (color.RGBA) {
 }
 
 func createTileCanvas(tile_positions map[image.Point]string, mosaic *image.RGBA) {
-	for point, path := range tile_positions {
-		tile_file, err := os.Open(path)
+	for point, filename := range tile_positions {
+		tile_file, err := os.Open("./tiles/" + filename)
 		if err != nil {
 			fmt.Println(err)
 		}
-		defer tile_file.Close()
 		tile_image, _, err := image.Decode(tile_file)
+		tile_file.Close()
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -160,6 +160,21 @@ func createTileCanvas(tile_positions map[image.Point]string, mosaic *image.RGBA)
 		r := image.Rectangle{point, point.Add(resized_tile.Bounds().Size())}
 		draw.Draw(mosaic, r, resized_tile, image.Pt(0,0), draw.Src)
 	}
+}
+
+func makeTileDir() {
+	_, err := os.Stat("./tiles")
+	if err == nil {
+		return
+	} else {
+		err := os.Mkdir("./tiles", 0777)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
+
 }
 
 func saveTile(image image.Image, filename string) {
@@ -175,4 +190,9 @@ func saveTile(image image.Image, filename string) {
 		fmt.Println(err)
 		return
 	}
+}
+
+//empties the tiles folder after the canvas has been created
+func cleanTiles() {
+	os.RemoveAll("./tiles")
 }
