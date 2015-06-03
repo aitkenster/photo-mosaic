@@ -24,7 +24,7 @@ visit http://localhost:8080 to use the app
 
 Future Improvements
 
-Testing (this was an experimental app)
-Styling on the front end of the app
-App to take an image URL as well as an uploaded image
-Filter on image types in Flickr
+- Testing (this was an experimental app)
+- Styling
+- Take an image URL as well as an uploaded image
+- Filter on image types on Flickr feed
