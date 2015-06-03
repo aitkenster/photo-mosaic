@@ -13,14 +13,16 @@ import (
 	"path"
 )
 
-func main (){
-	test_image, err := os.Open("test_image2.jpeg")
+func main () {
+	test_image, err := os.Open("test_image3.jpeg")
 	if err != nil {
 		fmt.Print("Error @ img1")
 		fmt.Println(err)
 		return
 	}
+
 	defer test_image.Close()
+
 	img, _, err  := image.Decode(test_image)
 	if err != nil {
 		fmt.Print("Error @ img2")
@@ -28,8 +30,7 @@ func main (){
 		return
 	}
 
-//crop the main image
-
+	//extract information from the main image
 	resized_main_img := imaging.Resize(img, 300, 0, imaging.Lanczos)
 	image_averages := getImageAverageColors(resized_main_img)
 	mosaic, err := os.Create("altered_test_image.jpeg")
@@ -41,14 +42,14 @@ func main (){
 
 	defer mosaic.Close()
 
+	//get, save and get information about the tile images
 	photoLinks := image_source.GetFlickrRecentPhotos()
+	makeTileDir()
 	image_color_dictionary := processMosaicTiles(photoLinks)
-	tile_positions := make(map[image.Point]string)
-	for point, color := range image_averages {
-		tile_positions[point] = findClosestColorMatch(color, image_color_dictionary)
-	}
-	canvas := image.NewRGBA(image.Rect(0,0, img.Bounds().Max.X*5, img.Bounds().Max.Y*5))
 
+	//put the tiles on a new canvas
+	canvas := image.NewRGBA(image.Rect(0,0, img.Bounds().Max.X*5, img.Bounds().Max.Y*5))
+	tile_positions := matchTilesToPositions(image_averages, image_color_dictionary)
 	createTileCanvas(tile_positions, canvas)
 
 	err = jpeg.Encode(mosaic, canvas, nil)
@@ -57,9 +58,21 @@ func main (){
 		fmt.Println(err)
 		return
 	}
+
+	//cleanup
 	cleanTiles()
 }
 
+func matchTilesToPositions(
+	main_image_averages map[image.Point]color.RGBA,
+	tile_dictionary map[color.RGBA]string,
+) map[image.Point]string {
+	tile_positions := make(map[image.Point]string)
+	for point, color := range main_image_averages {
+		tile_positions[point] = findClosestColorMatch(color, tile_dictionary)
+	}
+	return tile_positions
+}
 
 //takes each 10x10 pixel block and returns the average color
 func getImageAverageColors(main_image *image.NRGBA) map[image.Point]color.RGBA{
@@ -78,11 +91,14 @@ func getImageAverageColors(main_image *image.NRGBA) map[image.Point]color.RGBA{
 	return average_colors
 }
 
+//gets the average colour of each tile then saves the tile into a directory
 func processMosaicTiles(photoLinks[]string) map[color.RGBA] string {
-	makeTileDir()
 	image_color_dictionary := make(map[color.RGBA]string)
+
 	for _, link := range photoLinks {
+
 		fmt.Println("Getting image " + link + " from Flickr")
+
 		resp, err := http.Get(link)
 		if err != nil {
 			fmt.Println(err)
@@ -96,11 +112,12 @@ func processMosaicTiles(photoLinks[]string) map[color.RGBA] string {
 			fmt.Println(err)
 			return nil
 		}
+
 		filename := path.Base(link)
 		saveTile(img, filename)
 		image_color_dictionary[averageColor(img)] = filename
 	}
-fmt.Println(image_color_dictionary)
+
 	return image_color_dictionary
 }
 
@@ -149,12 +166,17 @@ func createTileCanvas(tile_positions map[image.Point]string, mosaic *image.RGBA)
 		tile_file, err := os.Open("./tiles/" + filename)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
+
 		tile_image, _, err := image.Decode(tile_file)
-		tile_file.Close()
 		if err != nil {
 			fmt.Println(err)
+			tile_file.Close()
+			return
 		}
+
+		tile_file.Close()
 
 		resized_tile := imaging.Resize(tile_image, 25, 25, imaging.Lanczos)
 		r := image.Rectangle{point, point.Add(resized_tile.Bounds().Size())}
@@ -164,17 +186,13 @@ func createTileCanvas(tile_positions map[image.Point]string, mosaic *image.RGBA)
 
 func makeTileDir() {
 	_, err := os.Stat("./tiles")
-	if err == nil {
-		return
-	} else {
+	if err != nil  && os.IsNotExist(err) {
 		err := os.Mkdir("./tiles", 0777)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
-
-
 }
 
 func saveTile(image image.Image, filename string) {
