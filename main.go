@@ -4,12 +4,11 @@ import (
 	"net/http"
 	"io/ioutil"
 	"fmt"
-	"os"
 	"image"
-//import file formats for the image package to decode
 	_ "image/png"
 	_ "image/gif"
-	"image/jpeg"
+	_ "image/jpeg"
+	"github.com/aitkenster/photo-mosaic/edit_image"
 )
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -32,24 +31,9 @@ func viewFileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := os.Create("./public/tmp/uploadedfile.jpg")
-	if err != nil {
-		fmt.Fprint(w, "Error @ 3")
-		fmt.Fprint(w, err)
+	edit_image.CreateMosaic(img)
 
-	}
-
-	err = jpeg.Encode(out, img, nil)
-	if err != nil {
-		fmt.Fprint(w, "Error @ 4")
-		fmt.Fprint(w, err)
-		return
-	}
-
-	defer out.Close()
-
-	http.ServeFile(w, r, "./public/tmp/uploadedfile.jpg")
-
+	http.ServeFile(w, r, "altered_test_image.jpeg")
 }
 
 func main () {

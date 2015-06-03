@@ -3,6 +3,7 @@ package image_source
 import (
 	"net/http"
 	"fmt"
+	"io/ioutil"
 	"encoding/json"
 )
 
@@ -27,6 +28,8 @@ func GetFlickrRecentPhotos() []string {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		badResp, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println(string(badResp))
 		fmt.Println(err)
 		return nil
 	}

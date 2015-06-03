@@ -11,24 +11,10 @@ import (
 	"fmt"
 	"github.com/aitkenster/photo-mosaic/image_source"
 	"path"
-	"flag"
 )
 
 func CreateMosaic (uploadedImage image.Image) {
-	userURL := flag.String("url", "http://www.clickerzoneuk.co.uk/cz/wp-content/uploads/2010/10/PuppySmall.jpg", "")
-	flag.Parse()
-	//test_image, err := os.Open("test_image3.jpeg")
-	//if err != nil {
-		//fmt.Print("Error @ img1")
-		//fmt.Println(err)
-		//return
-		//}
-
-	//defer test_image.Close()
-
-	img := getMainImageFromURL(*userURL)
-	//extract information from the main image
-	resized_main_img := imaging.Resize(img, 300, 0, imaging.Lanczos)
+	resized_main_img := imaging.Resize(uploadedImage, 300, 0, imaging.Lanczos)
 	image_averages := getImageAverageColors(resized_main_img)
 	mosaic, err := os.Create("altered_test_image.jpeg")
 	if err != nil {
@@ -45,7 +31,7 @@ func CreateMosaic (uploadedImage image.Image) {
 	image_color_dictionary := processMosaicTiles(photoLinks)
 
 	//put the tiles on a new canvas
-	canvas := image.NewRGBA(image.Rect(0,0, img.Bounds().Max.X*5, img.Bounds().Max.Y*5))
+	canvas := image.NewRGBA(image.Rect(0,0, uploadedImage.Bounds().Max.X*5, uploadedImage.Bounds().Max.Y*5))
 	tile_positions := matchTilesToPositions(image_averages, image_color_dictionary)
 	createTileCanvas(tile_positions, canvas)
 
@@ -58,23 +44,6 @@ func CreateMosaic (uploadedImage image.Image) {
 
 	//cleanup
 	cleanTiles()
-}
-
-func getMainImageFromURL(url string) image.Image {
-	resp, err := http.Get(url)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-
-	defer resp.Body.Close()
-
-	img, _, err := image.Decode(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	return img
 }
 
 func matchTilesToPositions(
