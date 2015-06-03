@@ -1,4 +1,4 @@
-package main
+package edit_image
 
 import (
 	"image"
@@ -14,7 +14,7 @@ import (
 	"flag"
 )
 
-func main () {
+func CreateMosaic (uploadedImage image.Image) {
 	userURL := flag.String("url", "http://www.clickerzoneuk.co.uk/cz/wp-content/uploads/2010/10/PuppySmall.jpg", "")
 	flag.Parse()
 	//test_image, err := os.Open("test_image3.jpeg")
@@ -22,7 +22,7 @@ func main () {
 		//fmt.Print("Error @ img1")
 		//fmt.Println(err)
 		//return
-	//}
+		//}
 
 	//defer test_image.Close()
 
