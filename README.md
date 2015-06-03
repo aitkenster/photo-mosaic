@@ -4,6 +4,10 @@ Specification
 
 Created an app which allows a user to uplaod an image. It then connects to Flickr API to create a photo mosaic of the uploaded picture from recently uploaded Flickr photos.
 
+<img src="puppy-image.jpg" width="400"><img src="puppy-mosaic.jpeg" width="420">
+(original image from http://feelgrafix.com/921990-yellow-labrador-puppies.html)
+
+
 ##Technologies used
 
 Golang(core packages only)
