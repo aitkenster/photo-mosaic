@@ -10,6 +10,7 @@ import (
 	"os"
 	"fmt"
 	"github.com/aitkenster/photo-mosaic/image_source"
+	"path"
 )
 
 func main (){
@@ -78,9 +79,10 @@ func getImageAverageColors(main_image *image.NRGBA) map[image.Point]color.RGBA{
 
 func processMosaicTiles(photoLinks[]string) map[color.RGBA] string {
 	image_color_dictionary := make(map[color.RGBA]string)
-
-	for _, link := range photoLinks {
+	link := photoLinks[0]
+	//for _, link := range photoLinks {
 		resp, err := http.Get(link)
+		fmt.Println(resp)
 		if err != nil {
 			fmt.Println(err)
 			return nil
@@ -93,10 +95,11 @@ func processMosaicTiles(photoLinks[]string) map[color.RGBA] string {
 			fmt.Println(err)
 			return nil
 		}
-
-		image_color_dictionary[averageColor(img)] = link
-		return nil
-	}
+		filename := path.Base(link)
+		saveTile(img, filename)
+		image_color_dictionary[averageColor(img)] = filename
+		//return nil
+	//}
 fmt.Println(image_color_dictionary)
 	return image_color_dictionary
 }
@@ -156,5 +159,20 @@ func createTileCanvas(tile_positions map[image.Point]string, mosaic *image.RGBA)
 		resized_tile := imaging.Resize(tile_image, 25, 25, imaging.Lanczos)
 		r := image.Rectangle{point, point.Add(resized_tile.Bounds().Size())}
 		draw.Draw(mosaic, r, resized_tile, image.Pt(0,0), draw.Src)
+	}
+}
+
+func saveTile(image image.Image, filename string) {
+	tile, err := os.Create("./tiles/" + filename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer tile.Close()
+
+	err = jpeg.Encode(tile, image, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 }

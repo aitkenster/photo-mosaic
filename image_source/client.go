@@ -10,6 +10,7 @@ func GetFlickrRecentPhotos() []string {
 	resp, err := http.Get("https://api.flickr.com/services/feeds/photos_public.gne?format=json&nojsoncallback=1")
 	if err != nil {
 		fmt.Println(err)
+		return nil
 	}
 	defer resp.Body.Close()
 
